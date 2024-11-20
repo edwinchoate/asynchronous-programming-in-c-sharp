@@ -1,7 +1,5 @@
 ﻿
 // This represents a blocking synchronous function
-using System.Runtime.CompilerServices;
-
 void ProcessData () 
 {
     Console.WriteLine("Processing data...");
