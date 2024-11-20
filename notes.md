@@ -58,8 +58,72 @@ someTask.ContinueWith(task => {
     string s = task.Result; // Result is type T
 });
 
-// How NOT to do it (blocking)
+// Making a direct call to .Result is practically synchronous - it waits for the task to finish (and is blocking)
 string s = someTask.Result;
+```
+
+## Ch. 3 Using `async` and `await`
+
+`async` - tells the compiler that a function does some asynchronous work
+
+`await` - tells the compiler what code performs the asychronous task. The main thread is allowed to continue to run while awaiting. Once the await code is finished, the rest of the async function continues to execute 
+
+```C#
+async Task ProcessDataAsync () 
+{
+    string data = await ReadFromDatabase();
+    ...
+}
+```
+
+* An `async` function should return `Task`, `Task<T>`, or `void`.
+* It's conventional to use the suffix `Async` on asynchronous functions.
+
+### Handling Exceptions with Asynchronous Tasks
+
+* Exceptions that occur in async tasks are stored on the `Task.Exception` property of the Task. 
+* The `Task.Exception` property is of type `AggregateException`
+    * `AggregateExeception` is a collection of potentially more than one exception 
+* Exceptions thrown from a `Wait()` or `Result` call will be bundled together as an `AggregateException` and you'll have to iterate through the exceptions to see the specifics. 
+* On the other hand, `await` will throw the first exception of the `AggregateException`
+
+_Tip:_ https://expired.badssl.com/ lets you test expired SSL certificates
+
+This prints `System.AggregateException`, because it uses `.Result`:
+
+```C#
+async void ProcessDataAsync () 
+{
+    try 
+    {
+        Task<string> task = ReadFromDatabase();
+        string data = task.Result;
+        // Assuming an exception occurs
+    }
+    catch (Exception e) 
+    {
+        Console.WriteLine(e.GetType()); // -> AggregateException
+    }
+}
+```
+
+* To see the specific exception, you'd look in the `InnerException` property
+
+However, this prints the specific exception: 
+
+```C#
+async void ProcessDataAsync () 
+{
+    try 
+    {
+        string data = await ReadFromDatabase();
+        // Assuming an exception occurs
+    }
+    catch (Exception e) 
+    {
+        Console.WriteLine(e.GetType()); // -> FileNotFoundException (or whatever the first exception was)
+    }
+}
 ```
 
 ---
