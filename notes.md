@@ -126,5 +126,65 @@ async void ProcessDataAsync ()
 }
 ```
 
+## Ch. 4 Task Cancellation and Progress Monitoring 
+
+### Task Cancellation
+
+Class: `System.Threading.CancellationTokenSource`
+
+* `CancellationTokenSource.Token`
+* `CancellationTokenSource.Cancel()` - how to initiate a cancel request to cancel a thread/async task.
+    * Useful for allowing the end user to cancel an operation.
+    * Throws an `OperationCanceledException`
+* `CancellationTokenSource.CancelAfter(int)` - requests a cancellation after `int` milliseconds 
+
+Example of a timeout: 
+
+```C#
+CancellationTokenSource source = new();
+source.CancelAfter(500); // milliseconds 
+
+try 
+{
+    // Assuming SomeMethodAsync has an overload that accepts a cancellation token
+    await SomeMethodAsync(source.Token);
+}
+catch (Exception e)
+{...}
+finally 
+{
+    // remember to dispose, or use a using block 
+    source.Dispose();
+}
+```
+
+### Reporting Task Progress 
+
+* `Progress<T>` - .NET implementation of IProgress<T>
+    * `ProgressChanged` - event that fires when progress is updated 
+    * `Progress(Action<T> handler)` - you can pass a custom delegate if don't want to use the built-in `ProgressChanged` event
+* `IProgress<T>.Report(T)` - T represents the progress data 
+
+Example of displaying progress:
+
+```C#
+async Task ProcessFilesAsync (string[] files, IProgress<int> progress) 
+{
+    for (int i = 0; i < files.Length; i++) 
+    {
+        progress.Report(i); // what you pass into Report needs to be type T
+        await ReadDatabase(files[i]);
+    }
+}
+
+string[] filepaths = ...
+
+IProgress<int> reporter = new Progress<int>(i => // delegate must be a function of type T
+    Console.WriteLine($"Reading file {i+1}...");
+);
+
+var task = ProcessFilesAsync(filepaths, reporter);
+```
+
 ---
 End of document
